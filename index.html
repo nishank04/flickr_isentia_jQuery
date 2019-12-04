@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Home | Flickr</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="application-name" content="Home | Flickr"/>
+<meta name="msapplication-TileColor" content="#ffffff"/>
+<meta name="google" value="notranslate">
+<meta name="msapplication-TileImage" content="https://combo.staticflickr.com/pw/images/favicon-msapplication-tileimage.png"/>
+<link rel="mask-icon" sizes="any" href="https://combo.staticflickr.com/pw/images/icon_black_white.svg">
+<link rel="shortcut icon" type="image/ico" href="https://combo.staticflickr.com/pw/favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="https://combo.staticflickr.com/pw/apple-touch-icon.png">
+<meta name="theme-color" content="black"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="flickr.css" media="screen"/>
+<body>
+<div id="loading-bar"></div>  
+    <header>
+        <nav>
+            <ul>
+                <li>
+                    <a href="/flickr"><img src="logo.png"></a>
+                </li>
+                <li style="float: right;">
+                    <div class="input-group">
+                      <span class="input-group-btn">
+                        <button class="btn btn-default" type="submit">
+                            <i class="fa fa-search"></i>
+                        </button>
+                      </span>
+                      <input id="search" type="text" class="form-control" placeholder="Photos, people, or groups">
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    <div class="main">
+        <div class="container">
+           <div class="masonry">
+             <img src="loader.gif" id="placeholder">
+            </div>
+        </div>
+    </div>    
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+<script>
+var defURL = "https://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?";
+var loader = $("#loading-bar");
+var placeholder = $("#placeholder");
+var myBody = $(".masonry");
+function ajax_call(url) {
+  return new Promise((resolve, reject) => {
+  loader.css("width", "55px").show();
+    $.ajax({
+        url: url,
+        dataType: 'jsonp',
+        data: {format: "json"},
+        success: function (data) {
+          loader.css("width", "100%");
+          setTimeout( function(){loader.fadeOut(300);}, 300);
+          resolve(data);
+        },
+    	  error: function(error) {
+    		console.log("Request Failed!");
+    		reject(error);
+    	  },
+    	})
+  })
+}
+function adminHome(url){
+  ajax_call(url).then(data => {
+    if( typeof data.items !== 'undefined' ) {
+      placeholder.hide();
+      var items = data.items;
+      for(x of items){
+          myBody.append('<div class="item"><img src="'+x.media.m+'"></div>');
+      }
+    }  
+	}).catch(error => {console.log(error);})
+}
+$(window).scroll(function() {
+  var winScroll = Math.round($(window).scrollTop() / 10) * 10;
+  var docHeight = $(document).height();
+  var winHeight = $(window).height();
+  var compHeight = Math.round((docHeight - winHeight) /10) * 10;
+  if (winScroll == compHeight) {
+    adminHome(defURL);
+  }
+});
+var searchBtn = document.getElementById('search');
+searchBtn.onkeypress = function(e){
+    if (!e) e = window.event;
+    var keyCode = e.keyCode || e.which;
+    if (keyCode == '13'){
+      myBody.html("");
+      placeholder.show();
+      var text = searchBtn.value;
+      var string = text.match(/[^ ,]+/g).join(',');
+      defURL = "https://api.flickr.com/services/feeds/photos_public.gne?tags="+string+"&tagmode=any&jsoncallback=?";
+      adminHome(defURL);
+    }
+  }
+adminHome(defURL);
+</script>
+</body>
+</html>
